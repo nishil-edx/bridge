@@ -1,10 +1,14 @@
 // App.js
 
 import React, { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
+import {  ethers } from 'ethers';
 import './App.css'; // Import the custom CSS file
 import avatar from './avatar.png';
-import {poolABI} from './abi/pool.json'
+import poolABI from './abi/pool.json'
+import tokenABI from './abi/token.json'
+import { BigNumber } from 'ethers';
+const tokenAddress="0x5741E7ADc4657599f7F831e425c6C685D8dB3fB4"
+const poolAddress="0x786ed31Aa96164822C5f045F8aD5e73C4c3f49fa"
 
 const App = () => {
   const [networks, setNetworks] = useState(['Ethereum', 'Polygon', 'BSC','AMOY']);
@@ -14,15 +18,12 @@ const App = () => {
   const [recipient, setRecipient] = useState('');
   const [status, setStatus] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
-  const [provider, setProvider] = useState(null);
-  const [ensName, setENSName] = useState('');
   const [network, setNetwork] = useState('');
   const [balance, setBalance] = useState('');
-  const [networkId, setNetworkId] = useState('');
-  const [search, setSearch] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [message, setMessage] = useState('');
-  const[coin , setCoin] = useState('');
+  const [coin , setCoin] = useState('');
+  const[showApprove, setShowApprove] = useState(false);
+  const[showCross, setShowCross] = useState(false);
  
  
   const networkParams_ethereum = {
@@ -108,8 +109,10 @@ const App = () => {
 
 
 async function CheckNetwork(x) {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const network = await provider.getNetwork();
+  const prov = new ethers.providers.Web3Provider(window.ethereum);
+  const signer = prov.getSigner();
+  console.log(signer);
+  const network = await prov.getNetwork();
   const networkId = network.chainId;
   console.log (networkId);
 
@@ -220,23 +223,59 @@ async function CheckNetwork(x) {
                
               } catch (addError) {    
                 console.error('Failed to add network:', addError);
-              }}}}
-      
+              }}}
+            }
+
+            }
 
 
-
+ const approve=async()=>{
+  try{
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+     const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
+    const tx = await tokenContract.approve(poolAddress, ethers.utils.parseEther(amount));
+    await tx.wait();
+  }catch(error){
+    console.log(error);
+  }
 
 }
 
+const getAllownace=async()=>{
+  try{
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const user= await signer.getAddress()
+    console.log (user);
+    const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
+    const tx = await tokenContract.allowance(user,poolAddress);
+    console.log(tx.toString());
+   return ethers.utils.formatEther(tx);
+  }catch(error){
+    console.log(error);
+  }
+}
+const CROSS2=async()=>{
+  try{
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const poolContract = new ethers.Contract(poolAddress, poolABI, signer);
+    const fee= await poolContract.estimateFee(1073741850,8000000);
+    const feeInWei = ethers.utils.parseUnits(fee.toString(), 'wei');
+    const tx = await poolContract.crossTo(1073741850,recipient,ethers.utils.parseEther(amount),{value:BigNumber.from(feeInWei)});
+    await tx.wait();
+  }catch(error){
+    console.log(error);
+  }
 
- 
+}
 
 
   useEffect(() => {
     const fetch = async () => {
       try {
         if (!window.ethereum) return;
-
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
         const bal = await signer.getBalance();
@@ -245,8 +284,6 @@ async function CheckNetwork(x) {
         const networkId = network.chainId;
         const accounts = await provider.listAccounts();
         if (!accounts[0]) return;
-        setNetworkId(networkId);
-
         if (networkId == 1995) {
           setNetwork('EDX testnet');
           setCoin('EDX');
@@ -262,6 +299,9 @@ async function CheckNetwork(x) {
         } else if (networkId == 56) {
           setNetwork('BSC');
           setCoin('BNB');
+        } else if (networkId == 80002) {
+          setNetwork('AMOY');
+          setCoin('AMOY');
 
         } else {
           setNetwork('unknown network');
@@ -292,100 +332,127 @@ async function CheckNetwork(x) {
     }
 
     fetch();
-  }, [walletAddress,networkId,window.ethereum.chainId]);
+    CheckNetwork();
+   
+  },[]);
 
-  const handleTransfer = async () => {};
-
-  return (
-    <div className="blockchain-bridge">
-      <div className="connect-section">
-        {isConnected && network && <button className="network">{network}</button>}
-        <div className="board">
-         
-        </div>
-        {isConnected && balance && (
-          <button className="balance">{balance.slice(0, 6)} {coin}</button>
-        )}
-         {isConnected ? (
-            <button className="button2" disabled={true}>
-              <img className="avatar" src={avatar} alt="Avatar" />
-              {isConnected && ensName ? (
-                <p className="name">{ensName}</p>
-              ) : (
-                <p className="name">
-                  {walletAddress.slice(0, 6)}..{walletAddress.slice(-4)}
-                </p>
-              )}
-            </button>
-          ) : (
-            <button className="button1" onClick={connectWallet}>
-              Connect Wallet
-            </button>
+getAllownace();
+return (
+  <div className="blockchain-bridge">
+    <div className="connect-section">
+      {isConnected && network && <button className="network">{network}</button>}
+      <div className="board"></div>
+      {isConnected && balance && (
+        <button className="balance">{balance.slice(0, 6)} {coin}</button>
+      )}
+      {isConnected ? (
+        <button className="button2" disabled={true}>
+          <img className="avatar" src={avatar} alt="Avatar" />
+          {isConnected && (
+            <p className="name">
+              {walletAddress.slice(0, 6)}..{walletAddress.slice(-4)}
+            </p>
           )}
+        </button>
+      ) : (
+        <button className="button1" onClick={connectWallet}>
+          Connect Wallet
+        </button>
+      )}
+    </div>
+
+
+
+
+
+
+
+
+    
+
+    <div className="bridge-form">
+      <h1>Blockchain Bridge</h1>
+      <br />
+      
+      <div >
+        <div>
+        <select
+          value={selectedNetwork}
+          onChange={(e) => setSelectedNetwork(e.target.value)}
+          onClick={(e) => CheckNetwork(e.target.value)}
+        >
+          {networks.map((network) => (
+            <option key={network} value={network}>
+              {network}
+            </option>
+          ))}
+        </select>
+        <select id='coin'
+          value={selectedCoin}
+          onChange={(e) => setSelectedCoin(e.target.value)}
+          
+        >
+          <option value="EDX">ETT</option>
+          
+          {/*  options for DAI, USDC, etc. here */}
+        </select>
+
+        </div>
+      </div>
+      
+
+
+      <h3>TO</h3>
+      
+
+
+      <div>
+        <select
+          value={selectedNetwork}
+          onChange={(e) => setSelectedNetwork(e.target.value)}
+          onClick={(e) => CheckNetwork(e.target.value)}
+        >
+          {networks.map((network) => (
+            <option key={network} value={network}>
+              {network}
+            </option>
+          ))}
+        </select>
+        <select id='coin'
+          value={selectedCoin}
+          onChange={(e) => setSelectedCoin(e.target.value)}
+          
+        >
+          <option value="EDX">ETT</option>
+          
+          {/*  options for DAI, USDC, etc. here */}
+        </select>
       </div>
 
-      <div className="bridge-form">
-        <h1>Blockchain Bridge</h1>
-        <div>
-          <label>Select Network:</label>
-          <select
-            value={selectedNetwork}
-            onChange={(e) => setSelectedNetwork(e.target.value)}
-            onClick={(e) => CheckNetwork(e.target.value)}
-          >
-            {networks.map((network) => (
-              <option
-                key={network}
-                value={network}
-               
-                // disabled={
-                //   network !== 'Ethereum' &&
-                //   network !== 'Polygon' &&
-                //   network !== 'BSC'
-                // }
-               
-              >
-                {network}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label>Select Coin:</label>
-          <select
-            value={selectedCoin}
-            onChange={(e) => setSelectedCoin(e.target.value)}
-            disabled
-          >
-            <option value="EDX">EDX</option>
-            {/* Add options for DAI, USDC, etc. here */}
-          </select>
-        </div>
-        <div>
-          {/* <label>Balance:</label>
-          <p>{balance}</p> */}
-        </div>
-        <form onSubmit={handleTransfer}>
-          <label>Amount:</label>
-          <input
-            type="text"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-          <br />
-          <label>Recipient Address:</label>
-          <input
-            type="text"
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-          />
-          <br />
-          <button type="submit">Transfer</button>
-        </form>
-        {status && <p className="status">{status}</p>}
-      </div>
+      <form>
+        <label>Amount:</label>
+        <input
+          type="text"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <br />
+        <label>Recipient Address:</label>
+        <input
+          type="text"
+          value={recipient}
+          onChange={(e) => setRecipient(e.target.value)}
+        />
+        <br />
+      </form>
+
+      <button onClick={approve}>approve</button>
+      <button onClick={CROSS2}>TRANSFER</button>
+      {status && <p className="status">{status}</p>}
     </div>
-  );
+  </div>
+);
+
 };
 
 export default App;

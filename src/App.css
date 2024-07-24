@@ -1,5 +1,3 @@
-/* App.css */
-
 body {
   font-family: 'Arial', sans-serif;
   background-color: #f4f4f4;
@@ -42,7 +40,6 @@ body {
   border: none;
   border-radius: 5px;
   font-size: 12px;
-
 }
 
 .connect-section .board {
@@ -73,10 +70,12 @@ body {
   border-radius: 50%;
   margin-right: 10px;
 }
+
 .connect-section .balance {
- margin-left: 10px;
+  margin-left: 10px;
   margin-right: 10px;
 }
+
 .connect-section .name {
   padding: 0px 0px;
   font-size: 12px;
@@ -88,7 +87,8 @@ body {
   margin-top: 20px;
 }
 
-h1 {
+h1,
+h3 {
   text-align: center;
   color: #33333389;
   margin-bottom: 20px;
@@ -127,7 +127,6 @@ button[type="submit"] {
   margin-top: 15px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-
 }
 
 button[type="submit"]:hover {
@@ -145,4 +144,25 @@ p {
   color: red;
   text-align: center;
   font-size: 0.9em;
+}
+
+.network-selection {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.network-selection select {
+  flex: 1; /* Take up remaining space */
+  margin-right: 10px; /* Provide some spacing between select and button */
+}
+
+.network-selection button {
+  padding: 14px 20px;
+  background-color: #828b82;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
 }
