@@ -11,12 +11,12 @@ const tokenAddress="0x5741E7ADc4657599f7F831e425c6C685D8dB3fB4"
 const poolAddress="0x786ed31Aa96164822C5f045F8aD5e73C4c3f49fa"
 
 const App = () => {
-  const [networks, setNetworks] = useState(['Ethereum', 'Polygon', 'BSC','AMOY']);
+  const [networks, ] = useState(['Ethereum', 'Polygon', 'BSC','AMOY']);
   const [selectedNetwork, setSelectedNetwork] = useState('Ethereum');
   const [selectedCoin, setSelectedCoin] = useState('EDX');
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, ] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [network, setNetwork] = useState('');
   const [balance, setBalance] = useState('');
@@ -24,8 +24,9 @@ const App = () => {
   const [coin , setCoin] = useState('');
   const[showApprove, setShowApprove] = useState(false);
   const[showCross, setShowCross] = useState(false);
+  const[tokenBalance, setTokenBalance] = useState('');
  
- 
+
   const networkParams_ethereum = {
     chainId: '0x1',
     chainName: 'Ethereum Mainnet',
@@ -63,29 +64,29 @@ const App = () => {
     blockExplorerUrls: ['https://etherscan.io'],
   }
 
-  const networkParams_edexaMainnet = {
-    chainId: '0x1530',
-    chainName: 'Edexa Mainnet',
-    nativeCurrency: {
-      name: 'EDEXA',
-      symbol: 'EDX',
-      decimals: 18,
-    },
-    rpcUrls: ['https://mainnet.edexa.network/rpc'],
-    blockExplorerUrls: ['https://explorer.edexa.network'],
-  };
+  // const networkParams_edexaMainnet = {
+  //   chainId: '0x1530',
+  //   chainName: 'Edexa Mainnet',
+  //   nativeCurrency: {
+  //     name: 'EDEXA',
+  //     symbol: 'EDX',
+  //     decimals: 18,
+  //   },
+  //   rpcUrls: ['https://mainnet.edexa.network/rpc'],
+  //   blockExplorerUrls: ['https://explorer.edexa.network'],
+  // };
 
-  const networkParams_edexaTestnet = {
-    chainId: '0x7cb',
-    chainName: 'Edexa Testnet',
-    nativeCurrency: {
-      name: 'EDEXA',
-      symbol: 'EDX',
-      decimals: 18,
-    },
-    rpcUrls: ['https://testnet.edexa.network/rpc'],
-    blockExplorerUrls: ['https://explorer.testnet.edexa.network'],
-  };
+  // const networkParams_edexaTestnet = {
+  //   chainId: '0x7cb',
+  //   chainName: 'Edexa Testnet',
+  //   nativeCurrency: {
+  //     name: 'EDEXA',
+  //     symbol: 'EDX',
+  //     decimals: 18,
+  //   },
+  //   rpcUrls: ['https://testnet.edexa.network/rpc'],
+  //   blockExplorerUrls: ['https://explorer.testnet.edexa.network'],
+  // };
 
 
   const networkParams_polygon = {
@@ -101,14 +102,18 @@ const App = () => {
   };
   const connectWallet = async () => {
     try {
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
+     const accounts= await window.ethereum.request({ method: 'eth_requestAccounts' });
+     setWalletAddress(accounts[0]);
+     setIsConnected(true);
+     
     } catch (error) {
       console.error('Error connecting to wallet:', error);
     }
   };
 
 
-async function CheckNetwork(x) {
+ async function CheckNetwork(x) {
+  
   const prov = new ethers.providers.Web3Provider(window.ethereum);
   const signer = prov.getSigner();
   console.log(signer);
@@ -116,7 +121,7 @@ async function CheckNetwork(x) {
   const networkId = network.chainId;
   console.log (networkId);
 
-  if(x=='Ethereum' && networkId != 1)   {
+  if(x==='Ethereum' && networkId !==1)   {
  
     try {
       // Try to switch to the network
@@ -145,7 +150,7 @@ async function CheckNetwork(x) {
     }
   } 
 
-  if(x=='Polygon' && networkId != 137)   {
+  if(x==='Polygon' && networkId !== 137)   {
  
     try {
       // Try to switch to the network
@@ -161,7 +166,7 @@ async function CheckNetwork(x) {
           // Try to add the network
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [networkParams_ethereum],
+            params: [networkParams_polygon],
           });
           console.log('Network added successfully');
          
@@ -175,7 +180,7 @@ async function CheckNetwork(x) {
   } 
 
 
-  if(x=='AMOY' && networkId != 80002)   {
+  if(x==='AMOY' && networkId !== 80002)   {
  
     try {
       // Try to switch to the network
@@ -191,7 +196,7 @@ async function CheckNetwork(x) {
           // Try to add the network
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [networkParams_BSC],
+            params: [networkParams_AMOY],
           });
           console.log('Network added successfully');
          
@@ -201,7 +206,7 @@ async function CheckNetwork(x) {
 
 
 
-        if(x=='BSC' && networkId != 56)   {
+        if(x==='BSC' && networkId !== 56)   {
  
           try {
             // Try to switch to the network
@@ -242,20 +247,7 @@ async function CheckNetwork(x) {
 
 }
 
-const getAllownace=async()=>{
-  try{
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const user= await signer.getAddress()
-    console.log (user);
-    const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
-    const tx = await tokenContract.allowance(user,poolAddress);
-    console.log(tx.toString());
-   return ethers.utils.formatEther(tx);
-  }catch(error){
-    console.log(error);
-  }
-}
+
 const CROSS2=async()=>{
   try{
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -271,81 +263,134 @@ const CROSS2=async()=>{
 
 }
 
+const fetch = async () => {
+    
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    if(signer){
+     const bal = await signer.getBalance()
+    setBalance(ethers.utils.formatEther(bal));
+    }
+    const network = await provider.getNetwork();
+    const networkId = network.chainId;
+    const accounts = await provider.listAccounts();
+    if (networkId === 1995) {
+      setNetwork('EDX testnet');
+      setCoin('EDX');
+    } else if (networkId === 5424) {
+      setNetwork('EDX MAINNET');
+      setCoin('EDX');
+    } else if (networkId === 1) {
+      setNetwork('Ethereum');
+      setCoin('ETH');
+    } else if (networkId === 137) {
+      setNetwork('Polygon');
+      setCoin('MATIC');
+    } else if (networkId === 56) {
+      setNetwork('BSC');
+      setCoin('BNB');
+    } else if (networkId === 80002) {
+      setNetwork('AMOY');
+      setCoin('AMOY');
+
+    } else {
+      setNetwork('unknown network');
+      setCoin('NA');
+     
+    }
+    
+
+     setWalletAddress(accounts[0]);
+     setIsConnected(true);
+
+    
+
+  }
+
+
+
+
+
+
+
+
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        if (!window.ethereum) return;
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        const bal = await signer.getBalance();
-        setBalance(ethers.utils.formatEther(bal));
-        const network = await provider.getNetwork();
-        const networkId = network.chainId;
-        const accounts = await provider.listAccounts();
-        if (!accounts[0]) return;
-        if (networkId == 1995) {
-          setNetwork('EDX testnet');
-          setCoin('EDX');
-        } else if (networkId == 5424) {
-          setNetwork('EDX MAINNET');
-          setCoin('EDX');
-        } else if (networkId == 1) {
-          setNetwork('Ethereum');
-          setCoin('ETH');
-        } else if (networkId == 137) {
-          setNetwork('Polygon');
-          setCoin('MATIC');
-        } else if (networkId == 56) {
-          setNetwork('BSC');
-          setCoin('BNB');
-        } else if (networkId == 80002) {
-          setNetwork('AMOY');
-          setCoin('AMOY');
-
-        } else {
-          setNetwork('unknown network');
-          setCoin('NA');
-         
-        }
-
-        setWalletAddress(accounts[0]);
-        setIsConnected(true);
-
-        const balance = await provider.getBalance(accounts[0]);
-        setBalance(ethers.utils.formatEther(balance));
-      } catch (error) {}
-    };
-    const handleAccountsChanged = (accounts) => {
-      fetch();
-      if (accounts.length === 0) {
-        setWalletAddress(null);
-        setIsConnected(false);
-      } else {
-        setWalletAddress(accounts[0]);
-        setIsConnected(true);
-      }
-    };
-
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-    }
-
-    fetch();
-    CheckNetwork();
+   fetch() 
    
   },[]);
 
-getAllownace();
+  const handleAccountsChanged = (accounts) => {
+    fetch();
+    if (accounts.length === 0) {
+      setWalletAddress(null);
+      setIsConnected(false);
+    } else {
+      setWalletAddress(accounts[0]);
+      setIsConnected(true);
+    }
+  };
+
+  window.ethereum.on('accountsChanged', handleAccountsChanged);
+  window.ethereum.on('chainChanged', fetch);
+
+useEffect(() => {
+  const getAllownace=async()=>{
+    try{
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const user= await signer.getAddress()
+      const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
+      const tx = await tokenContract.allowance(user,poolAddress);
+      const ALLOWANCE = (ethers.utils.formatEther(tx));
+      if(ALLOWANCE>=amount){setShowApprove(false);
+      setShowCross(true)} else if(ALLOWANCE<amount){setShowApprove(true);setShowCross(false)}
+      if(showApprove===true){setShowCross(false)}
+    
+    }catch(error){
+      console.log(error);
+    }
+  }
+ 
+ getAllownace()
+},[recipient])
+
+const setMax=async()=>{
+  try{
+   
+    setAmount('50000');
+    
+  }catch(error){
+    console.log(error);
+  }
+}
+
+
+const getCoinBalance=async()=>{
+  try{
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const user= await signer.getAddress()
+    const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
+    const bal = await tokenContract.balanceOf(user);
+    console.log(bal);
+    setTokenBalance(ethers.utils.formatEther(bal));
+  }catch(error){
+    console.log(error);
+  }
+}
+
+getCoinBalance();
+
 return (
   <div className="blockchain-bridge">
     <div className="connect-section">
-      {isConnected && network && <button className="network">{network}</button>}
+      {isConnected && network&&walletAddress && <button className="network">{network}</button>}
       <div className="board"></div>
-      {isConnected && balance && (
+      {isConnected && balance&& (
         <button className="balance">{balance.slice(0, 6)} {coin}</button>
       )}
-      {isConnected ? (
+      {isConnected&& walletAddress ? (
         <button className="button2" disabled={true}>
           <img className="avatar" src={avatar} alt="Avatar" />
           {isConnected && (
@@ -376,10 +421,11 @@ return (
       
       <div >
         <div>
-        <select
+        <select id='x'
           value={selectedNetwork}
           onChange={(e) => setSelectedNetwork(e.target.value)}
           onClick={(e) => CheckNetwork(e.target.value)}
+          
         >
           {networks.map((network) => (
             <option key={network} value={network}>
@@ -392,7 +438,7 @@ return (
           onChange={(e) => setSelectedCoin(e.target.value)}
           
         >
-          <option value="EDX">ETT</option>
+          <option value="ETT">ETT</option>
           
           {/*  options for DAI, USDC, etc. here */}
         </select>
@@ -407,27 +453,32 @@ return (
 
 
       <div>
-        <select
-          value={selectedNetwork}
+        <select id='x'
+        value="EDEXA"
           onChange={(e) => setSelectedNetwork(e.target.value)}
           onClick={(e) => CheckNetwork(e.target.value)}
         >
-          {networks.map((network) => (
-            <option key={network} value={network}>
-              {network}
+          
+            <option key={"EDEXA"} value="EDEXA" disabled='true'>
+             edeXa Testnet
             </option>
-          ))}
+      
         </select>
         <select id='coin'
           value={selectedCoin}
           onChange={(e) => setSelectedCoin(e.target.value)}
           
         >
-          <option value="EDX">ETT</option>
+          <option value="EDX">EDX</option>
           
           {/*  options for DAI, USDC, etc. here */}
         </select>
       </div>
+
+
+     <br></br><br></br><br></br><br></br>
+
+
 
       <form>
         <label>Amount:</label>
@@ -437,6 +488,9 @@ return (
           onChange={(e) => setAmount(e.target.value)}
         />
         <br />
+        <p>Balance: {tokenBalance}</p>
+        <button onClick={setMax}>Max</button>
+        <br />  <br />
         <label>Recipient Address:</label>
         <input
           type="text"
@@ -446,9 +500,11 @@ return (
         <br />
       </form>
 
-      <button onClick={approve}>approve</button>
-      <button onClick={CROSS2}>TRANSFER</button>
+     {showApprove&&(<button id="button2" onClick={approve}>approve</button>)} 
+     {showCross&&(<button id="button2" onClick={CROSS2}>TRANSFER</button>)}
       {status && <p className="status">{status}</p>}
+      <br></br><br></br><br></br><br></br>
+
     </div>
   </div>
 );

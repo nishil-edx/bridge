@@ -117,7 +117,7 @@ select {
   background-color: #f9f9f9;
 }
 
-button[type="submit"] {
+/* button {
   width: 100%;
   padding: 12px;
   background-color: #828b82;
@@ -127,7 +127,7 @@ button[type="submit"] {
   margin-top: 15px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-}
+} */
 
 button[type="submit"]:hover {
   background-color: #45a049;
@@ -165,4 +165,31 @@ p {
   border-radius: 5px;
   font-size: 12px;
   cursor: pointer;
+}
+#coin{
+  
+  
+  border-radius: 10px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline;
+  width: 100px;
+}
+#x{
+  width: 350px;
+  margin-right: 20px;
+  border-radius: 10px;
+}
+
+#button2{
+  width: 100%;
+  padding: 12px;
+  background-color: #828b82;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  margin-top: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 100px;
 }
