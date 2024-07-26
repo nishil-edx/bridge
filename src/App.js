@@ -353,17 +353,14 @@ useEffect(() => {
   }
  
  getAllownace()
-},[recipient])
+},[])
 
-const setMax=async()=>{
-  try{
-   
-    setAmount('50000');
-    
-  }catch(error){
-    console.log(error);
-  }
-}
+const setMax = (event) => {
+  event.preventDefault();
+  const bal=getCoinBalance();
+  setAmount(bal);
+};
+
 
 
 const getCoinBalance=async()=>{
@@ -375,6 +372,7 @@ const getCoinBalance=async()=>{
     const bal = await tokenContract.balanceOf(user);
     console.log(bal);
     setTokenBalance(ethers.utils.formatEther(bal));
+    return ethers.utils.formatEther(bal)
   }catch(error){
     console.log(error);
   }
@@ -483,13 +481,13 @@ return (
       <form>
         <label>Amount:</label>
         <input
-          type="text"
+           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
         <br />
         <p>Balance: {tokenBalance}</p>
-        <button onClick={setMax}>Max</button>
+        <button onClick={(event) => setMax(event)} type="button">Max</button>
         <br />  <br />
         <label>Recipient Address:</label>
         <input
