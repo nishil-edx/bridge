@@ -25,7 +25,7 @@ const App = () => {
   const[showApprove, setShowApprove] = useState(false);
   const[showCross, setShowCross] = useState(false);
   const[tokenBalance, setTokenBalance] = useState('');
- 
+ const [edxBalance  , setEdxBalance] = useState('');
 
   const networkParams_ethereum = {
     chainId: '0x1',
@@ -241,6 +241,8 @@ const App = () => {
      const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
     const tx = await tokenContract.approve(poolAddress, ethers.utils.parseEther(amount));
     await tx.wait();
+    setShowApprove(false);
+    setShowCross(true);
   }catch(error){
     console.log(error);
   }
@@ -318,7 +320,7 @@ const fetch = async () => {
   useEffect(() => {
    fetch() 
    
-  },[]);
+  },[amount,recipient]);
 
   const handleAccountsChanged = (accounts) => {
     fetch();
@@ -355,9 +357,10 @@ useEffect(() => {
  getAllownace()
 },[])
 
-const setMax = (event) => {
+const setMax = async(event) => {
   event.preventDefault();
-  const bal=getCoinBalance();
+  const bal=await getCoinBalance();
+  console.log(bal);
   setAmount(bal);
 };
 
@@ -370,7 +373,6 @@ const getCoinBalance=async()=>{
     const user= await signer.getAddress()
     const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
     const bal = await tokenContract.balanceOf(user);
-    console.log(bal);
     setTokenBalance(ethers.utils.formatEther(bal));
     return ethers.utils.formatEther(bal)
   }catch(error){
@@ -378,7 +380,22 @@ const getCoinBalance=async()=>{
   }
 }
 
+const getEdxBalance=async()=>{
+  try{
+    const provider = new ethers.providers.JsonRpcProvider('https://io-dataseed1.testnet.edexa.io-market.com/rpc');
+    const signer = provider.getSigner();
+    // console.log(signer);
+      const edxBal= await signer.balance;
+      console.log(edxBal);
+    // setEdxBalance(ethers.utils.formatEther(edxBal));
+    // setEdxBalance(ethers.utils.formatEther(edxBal));
+  }catch(error){
+    console.log(error);
+  }
+}
+
 getCoinBalance();
+getEdxBalance();
 
 return (
   <div className="blockchain-bridge">
@@ -436,11 +453,14 @@ return (
           onChange={(e) => setSelectedCoin(e.target.value)}
           
         >
-          <option value="ETT">ETT</option>
+          <option value="ETT">ETT </option>
+          
+         
           
           {/*  options for DAI, USDC, etc. here */}
         </select>
-
+        <p>Balance: {tokenBalance} ETT</p>
+        
         </div>
       </div>
       
@@ -471,6 +491,7 @@ return (
           
           {/*  options for DAI, USDC, etc. here */}
         </select>
+        <p>Balance: {edxBalance} EDX</p>
       </div>
 
 
@@ -486,7 +507,9 @@ return (
           onChange={(e) => setAmount(e.target.value)}
         />
         <br />
-        <p>Balance: {tokenBalance}</p>
+       
+        <p>Amount Recevie Will be: {amount} EDX  (1:1 Ratio)</p>
+        <br />
         <button onClick={(event) => setMax(event)} type="button">Max</button>
         <br />  <br />
         <label>Recipient Address:</label>
