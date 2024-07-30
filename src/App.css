@@ -193,3 +193,29 @@ p {
   transition: background-color 0.3s ease;
   margin-bottom: 100px;
 }
+
+.events-section {
+  margin-top: 20px;
+}
+
+.events-section ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.events-section li {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.events-section p {
+  margin: 5px 0;
+}
+
+.events-section hr {
+  border: 0;
+  border-top: 1px solid #eee;
+  margin: 10px 0;
+}

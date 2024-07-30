@@ -23,9 +23,10 @@ const App = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [coin , setCoin] = useState('');
   const[showApprove, setShowApprove] = useState(false);
-  const[showCross, setShowCross] = useState(false);
+  const[showCross, setShowCross] = useState(true);
   const[tokenBalance, setTokenBalance] = useState('');
  const [edxBalance  , setEdxBalance] = useState('');
+ const [crossArriveEvents, setCrossArriveEvents] = useState([]);
 
   const networkParams_ethereum = {
     chainId: '0x1',
@@ -84,7 +85,7 @@ const App = () => {
   //     symbol: 'EDX',
   //     decimals: 18,
   //   },
-  //   rpcUrls: ['https://testnet.edexa.network/rpc'],
+  //   rpcUrls: ['https://testnet.edexa.com/rpc'],
   //   blockExplorerUrls: ['https://explorer.testnet.edexa.network'],
   // };
 
@@ -241,8 +242,7 @@ const App = () => {
      const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
     const tx = await tokenContract.approve(poolAddress, ethers.utils.parseEther(amount));
     await tx.wait();
-    setShowApprove(false);
-    setShowCross(true);
+    
   }catch(error){
     console.log(error);
   }
@@ -257,8 +257,20 @@ const CROSS2=async()=>{
     const poolContract = new ethers.Contract(poolAddress, poolABI, signer);
     const fee= await poolContract.estimateFee(1073741850,8000000);
     const feeInWei = ethers.utils.parseUnits(fee.toString(), 'wei');
+    const allowance =await getAllownace();
+    if( recipient === '') {
+      alert('Please enter the recipient address');
+      return
+    }
+    if(parseFloat(allowance)<parseFloat(amount)){
+    await approve();
     const tx = await poolContract.crossTo(1073741850,recipient,ethers.utils.parseEther(amount),{value:BigNumber.from(feeInWei)});
     await tx.wait();
+    }else{
+      const tx = await poolContract.crossTo(1073741850,recipient,ethers.utils.parseEther(amount),{value:BigNumber.from(feeInWei)});
+    await tx.wait();
+    }
+    
   }catch(error){
     console.log(error);
   }
@@ -336,7 +348,6 @@ const fetch = async () => {
   window.ethereum.on('accountsChanged', handleAccountsChanged);
   window.ethereum.on('chainChanged', fetch);
 
-useEffect(() => {
   const getAllownace=async()=>{
     try{
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -345,22 +356,22 @@ useEffect(() => {
       const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
       const tx = await tokenContract.allowance(user,poolAddress);
       const ALLOWANCE = (ethers.utils.formatEther(tx));
-      if(ALLOWANCE>=amount){setShowApprove(false);
-      setShowCross(true)} else if(ALLOWANCE<amount){setShowApprove(true);setShowCross(false)}
-      if(showApprove===true){setShowCross(false)}
+      return ALLOWANCE
+     
     
     }catch(error){
       console.log(error);
     }
   }
- 
+useEffect(() => {
+  
  getAllownace()
 },[])
 
 const setMax = async(event) => {
   event.preventDefault();
   const bal=await getCoinBalance();
-  console.log(bal);
+  // console.log(bal);
   setAmount(bal);
 };
 
@@ -382,20 +393,96 @@ const getCoinBalance=async()=>{
 
 const getEdxBalance=async()=>{
   try{
-    const provider = new ethers.providers.JsonRpcProvider('https://io-dataseed1.testnet.edexa.io-market.com/rpc');
-    const signer = provider.getSigner();
-    // console.log(signer);
-      const edxBal= await signer.balance;
-      console.log(edxBal);
-    // setEdxBalance(ethers.utils.formatEther(edxBal));
-    // setEdxBalance(ethers.utils.formatEther(edxBal));
+    const provider = new ethers.providers.JsonRpcProvider('https://testnet.edexa.com/rpc');
+      const edxBal= await provider.getBalance(walletAddress)
+    setEdxBalance(ethers.utils.formatEther(edxBal));
+    setEdxBalance(ethers.utils.formatEther(edxBal));
   }catch(error){
-    console.log(error);
+    // console.log(error);
   }
 }
 
 getCoinBalance();
 getEdxBalance();
+
+const setupEventListener = async () => {
+  try {
+    // Use the appropriate RPC URL for the network you're targeting
+    const provider = new ethers.providers.JsonRpcProvider('https://testnet.edexa.com/rpc');
+    const contract = new ethers.Contract(poolAddress, poolABI, provider);
+
+    // Listen for CrossArrive events
+    contract.on('CrossArrive', (fromChainId, from, to, amount, crossType) => {
+      console.log('CrossArrive event received:', { fromChainId, from, to, amount, crossType });
+      setCrossArriveEvents(prevEvents => [
+        ...prevEvents,
+        { fromChainId, from, to, amount: ethers.utils.formatEther(amount), crossType }
+      ]);
+    });
+  } catch (error) {
+    console.error('Error setting up event listener:', error);
+  }
+};
+
+const fetchHistoricalEvents = async () => {
+  try {
+    const provider = new ethers.providers.JsonRpcProvider('https://testnet.edexa.com/rpc');
+    const contract = new ethers.Contract(poolAddress, poolABI, provider);
+
+    // Define the filter for the CrossArrive event
+    const filter = contract.filters.CrossArrive();
+
+    // Define block range limits
+    const chunkSize = 1000; // Number of blocks per chunk
+    const latestBlock = await provider.getBlockNumber();
+    let fromBlock = 19568320;
+    let events = [];
+
+    while (fromBlock <= latestBlock) {
+      const toBlock = Math.min(fromBlock + chunkSize - 1, latestBlock);
+      
+      try {
+        const chunkEvents = await contract.queryFilter(filter, fromBlock, toBlock);
+        events = [...events, ...chunkEvents];
+      } catch (error) {
+        console.error(`Error fetching events from block ${fromBlock} to ${toBlock}:`, error);
+      }
+
+      fromBlock = toBlock + 1;
+    }
+
+    // Map the events to the state
+    setCrossArriveEvents(events.map(event => ({
+      fromChainId: event.args.fromChainId.toString(),
+      from: event.args.from,
+      to: event.args.to,
+      amount: ethers.utils.formatEther(event.args.amount),
+      crossType: event.args.crossType.toString()
+    })));
+  } catch (error) {
+    console.error('Error fetching historical events:', error);
+  }
+};
+
+
+
+useEffect(() => {
+  fetch();
+  fetchHistoricalEvents(); // Fetch historical events
+  setupEventListener(); // Set up event listener
+}, []);
+
+
+
+
+
+
+
+
+
+
+
+
 
 return (
   <div className="blockchain-bridge">
@@ -527,6 +614,27 @@ return (
       <br></br><br></br><br></br><br></br>
 
     </div>
+
+
+    <div className="events-section">
+  <h2>CrossArrive Events</h2>
+  <ul>
+    {crossArriveEvents.map((event, index) => (
+      <li key={index}>
+        <p><strong>From Chain ID:</strong> {event.fromChainId}</p>
+        <p><strong>From:</strong> {event.from}</p>
+        <p><strong>To:</strong> {event.to}</p>
+        <p><strong>Amount:</strong> {event.amount} EDX</p>
+        <p><strong>Cross Type:</strong> {event.crossType}</p>
+        <hr />
+      </li>
+    ))}
+  </ul>
+</div>
+
+
+
+
   </div>
 );
 
